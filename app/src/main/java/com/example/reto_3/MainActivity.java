@@ -89,8 +89,10 @@ public class MainActivity extends AppCompatActivity {
                     mInfoTextView.setText(R.string.result_human_wins);
                     mGameOver = true;
                 }
-                else
+                else if (winner == 3){
                     mInfoTextView.setText(R.string.result_computer_wins);
+                    mGameOver = true;
+                }
             }
         }
 
