@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.view.View;
 
 public class MainActivity extends AppCompatActivity {
+    private boolean mGameOver;
+
     private TicTacToeGame mGame;
 
     // Buttons making up the board
@@ -43,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startNewGame() {
+        mGameOver = false;
         mGame.clearBoard();
         for (int i = 0; i < mBoardButtons.length; i++) {
             mBoardButtons[i].setText("");
@@ -53,8 +56,11 @@ public class MainActivity extends AppCompatActivity {
         mInfoTextView.setText(R.string.first_human);
     } // End of startNewGame
 
+
+
     // Handles clicks on the game board buttons
     private class ButtonClickListener implements View.OnClickListener {
+
         int location;
         public ButtonClickListener(int location) {
             this.location = location;
@@ -75,24 +81,29 @@ public class MainActivity extends AppCompatActivity {
 
                 if (winner == 0)
                     mInfoTextView.setText(R.string.turn_human);
-                else if (winner == 1)
+                else if (winner == 1) {
                     mInfoTextView.setText(R.string.result_tie);
-                else if (winner == 2)
+                    mGameOver = true;
+                }
+                else if (winner == 2) {
                     mInfoTextView.setText(R.string.result_human_wins);
+                    mGameOver = true;
+                }
                 else
                     mInfoTextView.setText(R.string.result_computer_wins);
             }
         }
 
         private void setMove(char player, int location) {
-
-            mGame.setMove(player, location);
-            mBoardButtons[location].setEnabled(false);
-            mBoardButtons[location].setText(String.valueOf(player));
-            if (player == TicTacToeGame.HUMAN_PLAYER)
-                mBoardButtons[location].setTextColor(Color.rgb(50, 200, 50));
-            else
-                mBoardButtons[location].setTextColor(Color.rgb(200, 50, 50));
+            if (mGameOver == false) {
+                mGame.setMove(player, location);
+                mBoardButtons[location].setEnabled(false);
+                mBoardButtons[location].setText(String.valueOf(player));
+                if (player == TicTacToeGame.HUMAN_PLAYER)
+                    mBoardButtons[location].setTextColor(Color.rgb(50, 200, 50));
+                else
+                    mBoardButtons[location].setTextColor(Color.rgb(200, 50, 50));
+            }
         }
     }
 
