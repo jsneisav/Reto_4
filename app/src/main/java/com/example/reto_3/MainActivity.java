@@ -158,10 +158,10 @@ public class MainActivity extends AppCompatActivity {
                                 dialog.dismiss(); // Close dialog
 
                                 // TODO: Set the diff level of mGame based on which item was selected.
-                                if (selected == 1){
+                                if (levels[item].equals(getResources().getString(R.string.difficulty_easy))){
                                     mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Easy);
                                 }
-                                else if (selected == 2){
+                                else if (levels[item].equals(getResources().getString(R.string.difficulty_harder))){
                                     mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Harder);
                                 }
                                 else
