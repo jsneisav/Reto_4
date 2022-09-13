@@ -69,7 +69,7 @@ public class BoardView extends View {
 
         for (int i = 0; i < TicTacToeGame.BOARD_SIZE; i++) {
             int col = i % 3;
-            int row = i / 3;
+            int row = (int) Math.floor(i/3);
 // Define the boundaries of a destination rectangle for the image
             int left = col*(cellWidth + GRID_WIDTH);
             int top = row*(cellWidth + GRID_WIDTH);

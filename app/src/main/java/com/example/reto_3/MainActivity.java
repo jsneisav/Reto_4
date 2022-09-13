@@ -1,4 +1,5 @@
 package com.example.reto_3;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -6,6 +7,7 @@ import android.graphics.Color;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,20 +20,24 @@ public class MainActivity extends AppCompatActivity {
 
     private TicTacToeGame mGame;
 
-    // Buttons making up the board
-    private Button mBoardButtons[];
-
     // Various text displayed
     private TextView mInfoTextView;
+    private BoardView mBoardView;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mBoardButtons = new Button[TicTacToeGame.BOARD_SIZE];
         mInfoTextView = (TextView) findViewById(R.id.information);
         mGame = new TicTacToeGame();
+        mBoardView = (BoardView) findViewById(R.id.board);
+        mBoardView.setGame(mGame);
+        // Listen for touches on the board
+        mBoardView.setOnTouchListener(mTouchListener);
         startNewGame();
+
+
     }
 
     static final int DIALOG_DIFFICULTY_ID = 0;
@@ -56,29 +62,20 @@ public class MainActivity extends AppCompatActivity {
     private void startNewGame() {
         mGameOver = false;
         mGame.clearBoard();
-        for (int i = 0; i < mBoardButtons.length; i++) {
-            mBoardButtons[i].setText("");
-            mBoardButtons[i].setEnabled(true);
-            mBoardButtons[i].setOnClickListener(new ButtonClickListener(i));
-        }
+        mBoardView.invalidate();
         // Human goes first
         mInfoTextView.setText(R.string.first_human);
     } // End of startNewGame
 
-
-
-    // Handles clicks on the game board buttons
-    private class ButtonClickListener implements View.OnClickListener {
-
-        int location;
-        public ButtonClickListener(int location) {
-            this.location = location;
-        }
-
-        public void onClick(View view) {
-            if (mBoardButtons[location].isEnabled()) {
-                setMove(TicTacToeGame.HUMAN_PLAYER, location);
-
+    // Listen for touches on the board
+    private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
+        public boolean onTouch(View v, MotionEvent event) {
+    // Determine which cell was touched
+            int col = (int) event.getX() / mBoardView.getBoardCellWidth();
+            int row = (int) event.getY() / mBoardView.getBoardCellHeight();
+            int pos = row * 3 + col;
+            if (!mGameOver && setMove(TicTacToeGame.HUMAN_PLAYER, pos)){
+                setMove(TicTacToeGame.HUMAN_PLAYER, pos);
                 // If no winner yet, let the computer make a move
                 int winner = mGame.checkForWinner();
                 if (winner == 0) {
@@ -103,19 +100,17 @@ public class MainActivity extends AppCompatActivity {
                     mGameOver = true;
                 }
             }
+    // So we aren't notified of continued events when finger is moved
+            return false;
         }
+    };
 
-        private void setMove(char player, int location) {
-            if (mGameOver == false) {
-                mGame.setMove(player, location);
-                mBoardButtons[location].setEnabled(false);
-                mBoardButtons[location].setText(String.valueOf(player));
-                if (player == TicTacToeGame.HUMAN_PLAYER)
-                    mBoardButtons[location].setTextColor(Color.rgb(50, 200, 50));
-                else
-                    mBoardButtons[location].setTextColor(Color.rgb(200, 50, 50));
-            }
+    private boolean setMove(char player, int location) {
+        if (mGame.setMove(player, location)) {
+            mBoardView.invalidate(); // Redraw the board
+            return true;
         }
+        return false;
     }
 
     @Override
@@ -140,7 +135,6 @@ public class MainActivity extends AppCompatActivity {
                         getResources().getString(R.string.difficulty_harder),
                         getResources().getString(R.string.difficulty_expert)};
 
-                // TODO: Set selected, an integer (0 to n-1), for the Difficulty dialog.
                 // selected is the radio button that should be selected.
                 int selected = 1;
                 builder.setSingleChoiceItems(levels, selected,
@@ -148,7 +142,6 @@ public class MainActivity extends AppCompatActivity {
                             public void onClick(DialogInterface dialog, int item) {
                                 dialog.dismiss(); // Close dialog
 
-                                // TODO: Set the diff level of mGame based on which item was selected.
                                 if (levels[item].equals(getResources().getString(R.string.difficulty_easy))){
                                     mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Easy);
                                 }
