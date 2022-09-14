@@ -52,6 +52,16 @@ public class TicTacToeGame {
             return false;
     }
 
+    public void setBoardState(char[] board){
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            mBoard[i] = board[i];
+        }
+    }
+
+    public char[] getBoardState(){
+        return mBoard;
+    }
+
     public char getBoardOccupant(int location) {
         return mBoard[location];
     }

@@ -3,6 +3,7 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.view.Menu;
@@ -32,7 +33,8 @@ public class MainActivity extends AppCompatActivity {
     private int mHumanw = 0;
     private int mTie = 0;
     private int mComputerw = 0;
-
+    private int mGoFirst = 0;
+    private SharedPreferences mPrefs;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -48,20 +50,41 @@ public class MainActivity extends AppCompatActivity {
         mBoardView.setGame(mGame);
         // Listen for touches on the board
         mBoardView.setOnTouchListener(mTouchListener);
+        mPrefs = getSharedPreferences("ttt_prefs", MODE_PRIVATE);
+        // Restore the scores
+        mHumanw = mPrefs.getInt("mHumanWins", 0);
+        mComputerw = mPrefs.getInt("mComputerWins", 0);
+        mTie = mPrefs.getInt("mTies", 0);
+        if (savedInstanceState == null) {
+            startNewGame();
+        }
+        else {
+// Restore the game's state
+            mGame.setBoardState(savedInstanceState.getCharArray("board"));
+            mGameOver = savedInstanceState.getBoolean("mGameOver");
+            mInfoTextView.setText(savedInstanceState.getCharSequence("info"));
+            mHumanw = savedInstanceState.getInt("mHumanWins");
+            mComputerw = savedInstanceState.getInt("mComputerWins");
+            mTie = savedInstanceState.getInt("mTies");
+            mGoFirst = savedInstanceState.getChar("mGoFirst");
+        }
         displayScore();
-        startNewGame();
-
 
     }
 
     static final int DIALOG_DIFFICULTY_ID = 0;
     static final int DIALOG_QUIT_ID = 1;
 
+
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.new_game:
                 startNewGame();
+                return true;
+            case R.id.reset_scores:
+                resetScores();
                 return true;
             case R.id.ai_difficulty:
                 showDialog(DIALOG_DIFFICULTY_ID);
@@ -78,8 +101,23 @@ public class MainActivity extends AppCompatActivity {
         mGame.clearBoard();
         mBoardView.invalidate();
         // Human goes first
-        mInfoTextView.setText(R.string.first_human);
+        if((mGoFirst%2)==0){
+            mInfoTextView.setText(R.string.first_human);
+        }
+        else {
+            int move = mGame.getComputerMove();
+            mGame.setMove(TicTacToeGame.COMPUTER_PLAYER, move);
+            mComputerMediaPlayer.start();
+        }
+        mGoFirst++;
     } // End of startNewGame
+
+    private void resetScores() {
+        mHumanw = 0;
+        mComputerw = 0;
+        mTie = 0;
+        displayScore();
+    }
 
     // Listen for touches on the board
     private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
@@ -224,6 +262,28 @@ public class MainActivity extends AppCompatActivity {
         mVictoria.release();
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putCharArray("board", mGame.getBoardState());
+        outState.putBoolean("mGameOver", mGameOver);
+        outState.putInt("mHumanWins", Integer.valueOf(mHumanw));
+        outState.putInt("mComputerWins", Integer.valueOf(mComputerw));
+        outState.putInt("mTies", Integer.valueOf(mTie));
+        outState.putCharSequence("info", mInfoTextView.getText());
+        outState.putInt("mGoFirst", mGoFirst);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+// Save the current scores
+        SharedPreferences.Editor ed = mPrefs.edit();
+        ed.putInt("mHumanWins", mHumanw);
+        ed.putInt("mComputerWins", mComputerw);
+        ed.putInt("mTies", mTie);
+        ed.commit();
+    }
 };
 
 
