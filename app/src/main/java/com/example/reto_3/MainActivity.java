@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -15,6 +16,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
+import java.util.concurrent.TimeUnit;
+
 public class MainActivity extends AppCompatActivity {
     private boolean mGameOver;
 
@@ -22,7 +25,14 @@ public class MainActivity extends AppCompatActivity {
 
     // Various text displayed
     private TextView mInfoTextView;
+    private TextView mHw;
+    private TextView mT;
+    private TextView mCw;
     private BoardView mBoardView;
+    private int mHumanw = 0;
+    private int mTie = 0;
+    private int mComputerw = 0;
+
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -30,11 +40,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mInfoTextView = (TextView) findViewById(R.id.information);
+        mHw = (TextView) findViewById(R.id.textViewH);
+        mT = (TextView) findViewById(R.id.textViewT);
+        mCw = (TextView) findViewById(R.id.textViewC);
         mGame = new TicTacToeGame();
         mBoardView = (BoardView) findViewById(R.id.board);
         mBoardView.setGame(mGame);
         // Listen for touches on the board
         mBoardView.setOnTouchListener(mTouchListener);
+        displayScore();
         startNewGame();
 
 
@@ -80,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
                 int winner = mGame.checkForWinner();
                 if (winner == 0) {
                     mInfoTextView.setText(R.string.turn_computer);
+                    mComputerMediaPlayer.start();
                     int move = mGame.getComputerMove();
                     setMove(TicTacToeGame.COMPUTER_PLAYER, move);
                     winner = mGame.checkForWinner();
@@ -89,25 +104,37 @@ public class MainActivity extends AppCompatActivity {
                     mInfoTextView.setText(R.string.turn_human);
                 else if (winner == 1) {
                     mInfoTextView.setText(R.string.result_tie);
+                    mTie++;
                     mGameOver = true;
                 }
                 else if (winner == 2) {
                     mInfoTextView.setText(R.string.result_human_wins);
+                    mHumanw++;
+                    mVictoria.start();
                     mGameOver = true;
                 }
                 else if (winner == 3){
                     mInfoTextView.setText(R.string.result_computer_wins);
+                    mComputerw++;
                     mGameOver = true;
                 }
+                displayScore();
             }
     // So we aren't notified of continued events when finger is moved
             return false;
         }
     };
 
+    private void displayScore(){
+        mHw.setText("Human: \n"+mHumanw);
+        mT.setText("Tie: \n"+mTie);
+        mCw.setText("Computer: \n"+mComputerw);
+    }
+
     private boolean setMove(char player, int location) {
         if (mGame.setMove(player, location)) {
             mBoardView.invalidate(); // Redraw the board
+            mHumanMediaPlayer.start();
             return true;
         }
         return false;
@@ -175,6 +202,26 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         return dialog;
+    }
+
+    // sounds
+
+    MediaPlayer mHumanMediaPlayer;
+    MediaPlayer mComputerMediaPlayer;
+    MediaPlayer mVictoria;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mHumanMediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.user);
+        mComputerMediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.ia);
+        mVictoria = MediaPlayer.create(getApplicationContext(), R.raw.victoria);
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mHumanMediaPlayer.release();
+        mComputerMediaPlayer.release();
+        mVictoria.release();
     }
 
 };
