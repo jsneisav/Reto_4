@@ -3,22 +3,17 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
-import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Toast;
 
-import java.util.concurrent.TimeUnit;
-
-public class MainActivity extends AppCompatActivity {
+public class LocalActivity extends AppCompatActivity {
     private boolean mGameOver;
 
     private TicTacToeGame mGame;
@@ -32,13 +27,17 @@ public class MainActivity extends AppCompatActivity {
     private int mHumanw = 0;
     private int mTie = 0;
     private int mComputerw = 0;
-
+    private int turn = 0;
+    MediaPlayer mHumanMediaPlayer;
+    MediaPlayer mComputerMediaPlayer;
+    MediaPlayer mVictoria;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         mInfoTextView = (TextView) findViewById(R.id.information);
         mHw = (TextView) findViewById(R.id.textViewH);
         mT = (TextView) findViewById(R.id.textViewT);
@@ -78,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         mGame.clearBoard();
         mBoardView.invalidate();
         // Human goes first
-        mInfoTextView.setText(R.string.first_human);
+        mInfoTextView.setText(R.string.turn_human);
     } // End of startNewGame
 
     // Listen for touches on the board
@@ -88,21 +87,22 @@ public class MainActivity extends AppCompatActivity {
             int col = (int) event.getX() / mBoardView.getBoardCellWidth();
             int row = (int) event.getY() / mBoardView.getBoardCellHeight();
             int pos = row * 3 + col;
-            if (!mGameOver && setMove(TicTacToeGame.HUMAN_PLAYER, pos)){
-                setMove(TicTacToeGame.HUMAN_PLAYER, pos);
+            if ((mGame.mBoard[pos]==TicTacToeGame.OPEN_SPOT) && (!mGameOver)){
+                if (turn == 0){
+                    setMove(TicTacToeGame.HUMAN_PLAYER, pos);
+                    mInfoTextView.setText(R.string.turn_computer);
+                    mHumanMediaPlayer.start();
+                    turn = 1;
+                }
+                else if (turn == 1){
+                    setMove(TicTacToeGame.COMPUTER_PLAYER, pos);
+                    mInfoTextView.setText(R.string.turn_human);
+                    mComputerMediaPlayer.start();
+                    turn = 0;
+                }
                 // If no winner yet, let the computer make a move
                 int winner = mGame.checkForWinner();
-                if (winner == 0) {
-                    mInfoTextView.setText(R.string.turn_computer);
-                    mComputerMediaPlayer.start();
-                    int move = mGame.getComputerMove();
-                    setMove(TicTacToeGame.COMPUTER_PLAYER, move);
-                    winner = mGame.checkForWinner();
-                }
-
-                if (winner == 0)
-                    mInfoTextView.setText(R.string.turn_human);
-                else if (winner == 1) {
+                if (winner == 1) {
                     mInfoTextView.setText(R.string.result_tie);
                     mTie++;
                     mGameOver = true;
@@ -120,15 +120,18 @@ public class MainActivity extends AppCompatActivity {
                 }
                 displayScore();
             }
+            if (mGameOver){
+                turn = 0;
+            }
     // So we aren't notified of continued events when finger is moved
             return false;
         }
     };
 
     private void displayScore(){
-        mHw.setText("Human: \n"+mHumanw);
+        mHw.setText("Player 1: \n"+mHumanw);
         mT.setText("Tie: \n"+mTie);
-        mCw.setText("Computer: \n"+mComputerw);
+        mCw.setText("Player 2: \n"+mComputerw);
     }
 
     private boolean setMove(char player, int location) {
@@ -155,37 +158,6 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
         switch(id) {
-            case DIALOG_DIFFICULTY_ID:
-                builder.setTitle(R.string.difficulty_choose);
-                final CharSequence[] levels = {
-                        getResources().getString(R.string.difficulty_easy),
-                        getResources().getString(R.string.difficulty_harder),
-                        getResources().getString(R.string.difficulty_expert)};
-
-                // selected is the radio button that should be selected.
-                int selected = 1;
-                builder.setSingleChoiceItems(levels, selected,
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int item) {
-                                dialog.dismiss(); // Close dialog
-
-                                if (levels[item].equals(getResources().getString(R.string.difficulty_easy))){
-                                    mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Easy);
-                                }
-                                else if (levels[item].equals(getResources().getString(R.string.difficulty_harder))){
-                                    mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Harder);
-                                }
-                                else
-                                    mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Expert);
-
-                                // Display the selected difficulty level
-                                Toast.makeText(getApplicationContext(), levels[item],
-                                        Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                dialog = builder.create();
-
-                break;
             case DIALOG_QUIT_ID:
                 // Create the quit confirmation dialog
 
@@ -193,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
                         .setCancelable(false)
                         .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
-                                MainActivity.this.finish();
+                                LocalActivity.this.finish();
                             }
                         })
                         .setNegativeButton(R.string.no, null);
@@ -206,9 +178,7 @@ public class MainActivity extends AppCompatActivity {
 
     // sounds
 
-    MediaPlayer mHumanMediaPlayer;
-    MediaPlayer mComputerMediaPlayer;
-    MediaPlayer mVictoria;
+
     @Override
     protected void onResume() {
         super.onResume();
